@@ -3,7 +3,7 @@ name: Deploy Django App to Elastic Beanstalk
 on:
   push:
     branches:
-      - main  # Change if you deploy from another branch
+      - main
 
 jobs:
   deploy:
@@ -31,6 +31,7 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
       run: |
         eb use ${{ secrets.ENV_NAME }}
@@ -39,6 +40,7 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
       run: |
         eb deploy --staged --debug || eb logs
