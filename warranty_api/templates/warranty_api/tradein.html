@@ -1,0 +1,83 @@
+{% extends "warranty_api/base.html" %}
+
+{% block content %}
+<h2>Trade-In Estimator</h2>
+<p>Enter your device details to get an estimated trade-in value.</p>
+
+<form id="tradein-form">
+    <label for="device_model">Device Model:</label>
+    <input type="text" id="device_model" name="device_model" placeholder="Enter Device Model" required>
+
+    <label for="condition">Device Condition:</label>
+    <input type="text" id="condition" name="condition" placeholder="Enter Condition (e.g., new, good, fair, poor)" required>
+
+    <button type="submit">Estimate Value</button>
+</form>
+
+<div id="tradein-result"></div>
+
+<script>
+document.getElementById("tradein-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    let device_model = document.getElementById("device_model").value.trim();
+    let condition = document.getElementById("condition").value.trim().toLowerCase();  // ✅ Convert to lowercase
+
+    // Input validation
+    if (!device_model || !condition) {
+        document.getElementById("tradein-result").innerHTML = `<p style="color:red;">Please fill in all fields.</p>`;
+        return;
+    }
+
+    // Ensure device_model contains only letters, numbers, and spaces
+    if (!/^[a-zA-Z0-9\s]+$/.test(device_model)) {
+        document.getElementById("tradein-result").innerHTML = `<p style="color:red;">Invalid device model. Use only letters and numbers.</p>`;
+        return;
+    }
+
+    // Validate condition (it must be "new", "good", "fair", or "poor")
+    const validConditions = ["new", "good", "fair", "poor"];
+    if (!validConditions.includes(condition)) {
+        document.getElementById("tradein-result").innerHTML = `<p style="color:red;">Invalid condition. Enter one of: new, good, fair, poor.</p>`;
+        return;
+    }
+
+    window.fetch("https://8jff6zywgk.execute-api.us-east-1.amazonaws.com/dev/tradein-value/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+            device_model: device_model,
+            condition: condition
+        }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error("Device or condition not found.");
+            } else if (response.status === 400) {
+                throw new Error("Invalid request. Please check your input.");
+            } else {
+                throw new Error(`Server error. Status: ${response.status}`);
+            }
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            document.getElementById("tradein-result").innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
+        } else {
+            document.getElementById("tradein-result").innerHTML = `<p>Estimated Trade-In Value: <strong>$${data.estimated_value}</strong></p>`;
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        let errorMessage = error.message.includes("500") ? 
+            "Unexpected server error. Please try again later." : 
+            error.message;
+
+        document.getElementById("tradein-result").innerHTML = `<p style="color:red;">${errorMessage}</p>`;
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "warranty_api/base.html" %}
+
+{% block content %}
+<h2>Warranty Calculator</h2>
+<form id="warranty-form">
+    <label for="purchase_date">Purchase Date:</label>
+    <input type="date" id="purchase_date" name="purchase_date" required>
+    
+    <label for="warranty_duration">Warranty Duration (Months):</label>
+    <input type="number" id="warranty_duration" name="warranty_duration" required>
+
+    <button type="submit">Calculate Warranty</button>
+</form>
+
+<div id="result"></div>
+
+<script>
+document.getElementById("warranty-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    let purchase_date = document.getElementById("purchase_date").value;
+    let warranty_duration = document.getElementById("warranty_duration").value;
+
+    // Input validation
+    if (!purchase_date || !warranty_duration) {
+        document.getElementById("result").innerHTML = `<p style="color:red;">Please fill in all fields.</p>`;
+        return;
+    }
+
+    // Ensure warranty duration is a valid integer
+    warranty_duration = parseInt(warranty_duration);
+    if (Number.isNaN(warranty_duration) || warranty_duration <= 0) {
+        document.getElementById("result").innerHTML = `<p style="color:red;">Invalid warranty duration.</p>`;
+        return;
+    }
+
+    // Format purchase_date to YYYY-MM-DD
+    let purchase_date_obj = new Date(purchase_date);
+    let formatted_date = purchase_date_obj.toISOString().split("T")[0]; // Converts to YYYY-MM-DD
+
+    window.fetch("https://8jff6zywgk.execute-api.us-east-1.amazonaws.com/dev/calculate/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+            purchase_date: formatted_date, 
+            warranty_duration: warranty_duration
+        })
+    })
+    .then(response => response.text())  // Read response as text first
+    .then(text => {
+        try {
+            let data = JSON.parse(text); // Try parsing as JSON
+            if (data.error) {
+                document.getElementById("result").innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
+            } else {
+                document.getElementById("result").innerHTML = `<p>Warranty expires on: ${data.expiration_date}</p>`;
+            }
+        } catch (e) {
+            console.error("Invalid JSON:", text);
+            document.getElementById("result").innerHTML = `<p style="color:red;">Unexpected response format.</p>`;
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        document.getElementById("result").innerHTML = `<p style="color:red;">An error occurred. Check console for details.</p>`;
+    });
+});
+</script>
+{% endblock %}

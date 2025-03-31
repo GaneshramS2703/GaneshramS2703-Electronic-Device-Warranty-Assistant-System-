@@ -1,0 +1,55 @@
+{% extends "warranty_api/base.html" %}
+
+{% block content %}
+<h2>Find Repair Centers</h2>
+<form id="repair-form">
+    <label for="location">Enter Your Location:</label>
+    <input type="text" id="location" placeholder="City or Zip Code" required>
+    <button type="submit">Find Centers</button>
+</form>
+
+<div id="repair-results"></div>
+
+<script>
+document.getElementById("repair-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    
+    let location = document.getElementById("location").value.trim();
+    let api_url = "https://wsl1cfbhud.execute-api.us-east-1.amazonaws.com/default/GetServiceCentersAPI";
+
+    if (location) {
+        api_url += "?location=" + encodeURIComponent(location);
+    }
+
+    window.fetch(api_url)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        let resultsDiv = document.getElementById("repair-results");
+        resultsDiv.innerHTML = "<h3>Repair Centers:</h3>";
+
+        if (Array.isArray(data) && data.length > 0) {
+            data.forEach(center => {
+                resultsDiv.innerHTML += `
+                    <p>
+                        <strong>${center.name}</strong><br>
+                        📍 ${center.address} <br>
+                        🛠️ Type: ${center.type || "Unknown"}
+                    </p><hr>`;
+            });
+        } else {
+            resultsDiv.innerHTML += `<p style="color: red;">No repair centers found.</p>`;
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        document.getElementById("repair-results").innerHTML = `<p style="color:red;">An error occurred. Please try again.</p>`;
+    });
+});
+</script>
+
+{% endblock %}
