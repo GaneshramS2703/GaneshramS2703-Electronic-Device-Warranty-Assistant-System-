@@ -1,0 +1,6 @@
+global:
+  application_name: Electronic_Device_portal
+  default_region: us-east-1
+  environment_name: ElectronicDeviceportal-env
+  platform: Python 3.11
+  workspace_type: Application
